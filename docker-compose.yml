@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  # ---------------------------
+  # PostgreSQL
+  # ---------------------------
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: usersdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - appnet
+
+  # ---------------------------
+  # API 1 — EXPRESS (1 instância)
+  # ---------------------------
+  api1-express:
+    build: ./api1-express
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api1_schema"
+    depends_on:
+      - postgres
+    networks:
+      - appnet
+
+  # ---------------------------
+  # API 2 — FASTAPI (1 instância)
+  # ---------------------------
+  api2-fastapi:
+    build: ./api2-fastapi
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: usersdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      SCHEMA: api2_schema
+    depends_on:
+      - postgres
+    networks:
+      - appnet
+
+  # ---------------------------
+  # API 3 — NESTJS (1 instância)
+  # ---------------------------
+  api3-nestjs:
+    build: ./api3-nestjs
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api3_schema"
+    depends_on:
+      - postgres
+    networks:
+      - appnet
+
+  # ---------------------------
+  # GATEWAY NGINX
+  # ---------------------------
+  gateway:
+    image: nginx:stable-alpine
+    container_name: gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1-express
+      - api2-fastapi
+      - api3-nestjs
+    networks:
+      - appnet
+
+volumes:
+  pgdata:
+
+networks:
+  appnet:
+    driver: bridge
