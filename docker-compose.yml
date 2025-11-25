@@ -19,21 +19,26 @@ services:
       - appnet
 
   # ---------------------------
-  # API 1 — EXPRESS (1 instância)
+  # API 1 — EXPRESS (2 instâncias)
   # ---------------------------
-  api1-express:
+  api1-express-1:
     build: ./api1-express
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api1_schema"
-    depends_on:
-      - postgres
+    networks:
+      - appnet
+
+  api1-express-2:
+    build: ./api1-express
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api1_schema"
     networks:
       - appnet
 
   # ---------------------------
-  # API 2 — FASTAPI (1 instância)
+  # API 2 — FASTAPI (2 instâncias)
   # ---------------------------
-  api2-fastapi:
+  api2-fastapi-1:
     build: ./api2-fastapi
     environment:
       POSTGRES_HOST: postgres
@@ -42,20 +47,35 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       SCHEMA: api2_schema
-    depends_on:
-      - postgres
+    networks:
+      - appnet
+
+  api2-fastapi-2:
+    build: ./api2-fastapi
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: usersdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      SCHEMA: api2_schema
     networks:
       - appnet
 
   # ---------------------------
-  # API 3 — NESTJS (1 instância)
+  # API 3 — NESTJS (2 instâncias)
   # ---------------------------
-  api3-nestjs:
+  api3-nestjs-1:
     build: ./api3-nestjs
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api3_schema"
-    depends_on:
-      - postgres
+    networks:
+      - appnet
+
+  api3-nestjs-2:
+    build: ./api3-nestjs
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/usersdb?schema=api3_schema"
     networks:
       - appnet
 
@@ -70,9 +90,12 @@ services:
     volumes:
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api1-express
-      - api2-fastapi
-      - api3-nestjs
+      - api1-express-1
+      - api1-express-2
+      - api2-fastapi-1
+      - api2-fastapi-2
+      - api3-nestjs-1
+      - api3-nestjs-2
     networks:
       - appnet
 
